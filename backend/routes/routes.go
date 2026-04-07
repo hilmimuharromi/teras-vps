@@ -17,6 +17,7 @@ func Setup(app *fiber.App, db *gorm.DB, redis *redis.Client) {
 	billingController := controllers.NewBillingController(db)
 	userController := controllers.NewUserController(db)
 	adminController := controllers.NewAdminController(db)
+	supportController := controllers.NewSupportController(db)
 
 	// Initialize middleware
 	authMiddleware := middleware.Auth(db)
@@ -77,6 +78,14 @@ func Setup(app *fiber.App, db *gorm.DB, redis *redis.Client) {
 	user.Get("/profile", userController.GetProfile)
 	user.Put("/profile", userController.UpdateProfile)
 	user.Put("/password", userController.ChangePassword)
+
+	// Support tickets routes
+	support := protected.Group("/support")
+	support.Get("/tickets", supportController.ListTickets)
+	support.Post("/tickets", supportController.CreateTicket)
+	support.Get("/tickets/:id", supportController.GetTicket)
+	support.Post("/tickets/:id/messages", supportController.AddMessage)
+	support.Post("/tickets/:id/close", supportController.CloseTicket)
 
 	// Admin routes (require admin role)
 	admin := api.Group("/admin")
