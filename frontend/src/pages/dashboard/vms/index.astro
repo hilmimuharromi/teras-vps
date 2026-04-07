@@ -1,0 +1,173 @@
+---
+import DashboardLayout from '../../../layouts/Dashboard.astro';
+---
+
+<DashboardLayout title="My VMs - TerasVPS">
+  <div class="space-y-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold">My Virtual Machines</h1>
+        <p class="mt-2 text-muted-foreground">Manage your VM instances</p>
+      </div>
+      <a
+        href="/dashboard/vms/new"
+        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+      >
+        + Create VM
+      </a>
+    </div>
+
+    <!-- VMs List -->
+    <div id="vmsList" class="space-y-4">
+      <div class="text-center py-8 text-muted-foreground">
+        Loading VMs...
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">🖥️</div>
+      <h3 class="text-xl font-semibold mb-2">No VMs Yet</h3>
+      <p class="text-muted-foreground mb-4">Create your first virtual machine to get started</p>
+      <a
+        href="/dashboard/vms/new"
+        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+      >
+        Create VM
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Fetch VMs from API
+    async function fetchVMs() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/v1/vms', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const vms = data.data.vms;
+          const vmsList = document.getElementById('vmsList');
+          const emptyState = document.getElementById('emptyState');
+
+          if (vms.length === 0) {
+            vmsList.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+          } else {
+            vmsList.innerHTML = vms.map(vm => `
+              <div class="p-6 bg-card rounded-lg border border-border">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-xl font-semibold">${vm.name}</h3>
+                    <p class="text-sm text-muted-foreground">${vm.hostname}</p>
+                    <div class="mt-2 text-sm">
+                      <span class="mr-4">🖥️ ${vm.cores} Cores</span>
+                      <span class="mr-4">🧠 ${vm.memory}MB RAM</span>
+                      <span>💾 ${vm.disk}GB Disk</span>
+                    </div>
+                    <div class="mt-2 text-sm">
+                      <span class="mr-4">🌐 ${vm.public_ip || 'N/A'}</span>
+                      <span class="px-2 py-1 rounded ${
+                        vm.status === 'running' ? 'bg-green-100 text-green-800' :
+                        vm.status === 'stopped' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }">
+                        ${vm.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex space-x-2">
+                    <a
+                      href="/dashboard/vms/${vm.id}"
+                      class="px-3 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90"
+                    >
+                      View
+                    </a>
+                    <button
+                      onclick="startVM(${vm.id})"
+                      class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      ${vm.status === 'running' ? 'disabled' : ''}
+                    >
+                      ▶️ Start
+                    </button>
+                    <button
+                      onclick="stopVM(${vm.id})"
+                      class="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                      ${vm.status === 'stopped' ? 'disabled' : ''}
+                    >
+                      ⏹️ Stop
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch VMs:', error);
+        document.getElementById('vmsList').innerHTML = `
+          <div class="text-center py-8 text-destructive">
+            Failed to load VMs. Please try again.
+          </div>
+        `;
+      }
+    }
+
+    // Start VM
+    async function startVM(vmId: number) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/vms/${vmId}/start`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('VM started successfully!');
+          fetchVMs();
+        } else {
+          alert('Failed to start VM: ' + data.error.message);
+        }
+      } catch (error) {
+        alert('Failed to start VM: ' + error);
+      }
+    }
+
+    // Stop VM
+    async function stopVM(vmId: number) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/vms/${vmId}/stop`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('VM stopped successfully!');
+          fetchVMs();
+        } else {
+          alert('Failed to stop VM: ' + data.error.message);
+        }
+      } catch (error) {
+        alert('Failed to stop VM: ' + error);
+      }
+    }
+
+    // Fetch VMs on load
+    fetchVMs();
+  </script>
+</DashboardLayout>

@@ -1,0 +1,188 @@
+---
+import DashboardLayout from '../../../layouts/Dashboard.astro';
+---
+
+<DashboardLayout title="Create VM - TerasVPS">
+  <div class="max-w-2xl">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold">Create New VM</h1>
+      <p class="mt-2 text-muted-foreground">Choose a plan and configure your virtual machine</p>
+    </div>
+
+    <form id="createVMForm" class="space-y-6">
+      <!-- Plan Selection -->
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Select Plan</h2>
+        <div id="plansList" class="space-y-4">
+          <div class="text-center py-4 text-muted-foreground">
+            Loading plans...
+          </div>
+        </div>
+      </div>
+
+      <!-- VM Configuration -->
+      <div>
+        <h2 class="text-xl font-semibold mb-4">VM Configuration</h2>
+        <div class="space-y-4">
+          <div>
+            <label for="hostname" class="block text-sm font-medium">Hostname</label>
+            <input
+              id="hostname"
+              name="hostname"
+              type="text"
+              required
+              minlength="3"
+              maxlength="100"
+              class="mt-1 block w-full px-3 py-2 border border-input rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="my-server"
+            />
+            <p class="mt-1 text-xs text-muted-foreground">
+              3-100 characters, lowercase letters, numbers, and hyphens only
+            </p>
+          </div>
+
+          <div>
+            <label for="template" class="block text-sm font-medium">OS Template (Optional)</label>
+            <select
+              id="template"
+              name="template"
+              class="mt-1 block w-full px-3 py-2 border border-input rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Default Template</option>
+              <option value="ubuntu-22.04">Ubuntu 22.04 LTS</option>
+              <option value="ubuntu-20.04">Ubuntu 20.04 LTS</option>
+              <option value="debian-12">Debian 12 (Bookworm)</option>
+              <option value="debian-11">Debian 11 (Bullseye)</option>
+            </select>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Leave empty to use the default template
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex items-center justify-between">
+        <a
+          href="/dashboard/vms"
+          class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90"
+        >
+          Cancel
+        </a>
+        <button
+          type="submit"
+          class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+        >
+          Create VM
+        </button>
+      </div>
+
+      <div id="error" class="hidden text-sm text-destructive"></div>
+    </form>
+  </div>
+
+  <script>
+    let selectedPlanId: number | null = null;
+
+    // Fetch plans
+    async function fetchPlans() {
+      try {
+        const response = await fetch('/api/v1/billing/plans');
+        const data = await response.json();
+
+        if (data.success) {
+          const plans = data.data.plans;
+          const plansList = document.getElementById('plansList');
+
+          plansList.innerHTML = plans.map(plan => `
+            <div class="p-4 border rounded-lg cursor-pointer hover:border-primary transition-colors plan-card" data-plan-id="${plan.id}">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold">${plan.name}</h3>
+                  <div class="mt-2 text-sm">
+                    <span class="mr-4">🖥️ ${plan.cores} Cores</span>
+                    <span class="mr-4">🧠 ${plan.memory / 1024}GB RAM</span>
+                    <span>💾 ${plan.disk}GB Disk</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-2xl font-bold">Rp ${plan.price_monthly.toLocaleString()}</div>
+                  <div class="text-sm text-muted-foreground">/month</div>
+                </div>
+              </div>
+            </div>
+          `).join('');
+
+          // Add click handlers to plan cards
+          document.querySelectorAll('.plan-card').forEach(card => {
+            card.addEventListener('click', () => {
+              // Remove selection from all cards
+              document.querySelectorAll('.plan-card').forEach(c => {
+                c.classList.remove('border-primary', 'bg-primary/5');
+              });
+              // Select this card
+              card.classList.add('border-primary', 'bg-primary/5');
+              selectedPlanId = parseInt(card.getAttribute('data-plan-id') || '0');
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch plans:', error);
+        document.getElementById('plansList').innerHTML = `
+          <div class="text-center py-4 text-destructive">
+            Failed to load plans. Please try again.
+          </div>
+        `;
+      }
+    }
+
+    // Create VM
+    async function createVM(event: Event) {
+      event.preventDefault();
+
+      if (!selectedPlanId) {
+        alert('Please select a plan');
+        return;
+      }
+
+      const form = document.getElementById('createVMForm') as HTMLFormElement;
+      const formData = new FormData(form);
+
+      const payload = {
+        plan_id: selectedPlanId,
+        hostname: formData.get('hostname') as string,
+        template: formData.get('template') as string || '',
+      };
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/v1/vms', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('VM created successfully!');
+          window.location.href = '/dashboard/vms';
+        } else {
+          document.getElementById('error').textContent = data.error.message;
+          document.getElementById('error').classList.remove('hidden');
+        }
+      } catch (error) {
+        alert('Failed to create VM: ' + error);
+      }
+    }
+
+    // Fetch plans on load
+    fetchPlans();
+
+    // Add form submit handler
+    document.getElementById('createVMForm').addEventListener('submit', createVM);
+  </script>
+</DashboardLayout>
