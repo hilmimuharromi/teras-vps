@@ -98,7 +98,7 @@ func (c *Client) Login() error {
 
 	var result struct {
 		Data struct {
-			Ticket     string `json:"ticket"`
+			Ticket    string `json:"ticket"`
 			CSRFToken string `json:"CSRFPreventionToken"`
 		} `json:"data"`
 	}

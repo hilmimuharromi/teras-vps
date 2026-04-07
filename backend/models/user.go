@@ -10,8 +10,12 @@ import (
 type UserRole string
 
 const (
-	RoleCustomer UserRole = "customer"
-	RoleAdmin    UserRole = "admin"
+	UserRoleCustomer UserRole = "customer"
+	UserRoleAdmin    UserRole = "admin"
+
+	// Backwards-compatible aliases
+	RoleCustomer = UserRoleCustomer
+	RoleAdmin    = UserRoleAdmin
 )
 
 // User represents a user account
@@ -27,9 +31,9 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 
 	// Relations
-	VMs      []VM       `gorm:"foreignKey:UserID" json:"vms,omitempty"`
-	Invoices []Invoice  `gorm:"foreignKey:UserID" json:"invoices,omitempty"`
-	SSHKeys  []SSHKey   `gorm:"foreignKey:UserID" json:"ssh_keys,omitempty"`
+	VMs      []VM      `gorm:"foreignKey:UserID" json:"vms,omitempty"`
+	Invoices []Invoice `gorm:"foreignKey:UserID" json:"invoices,omitempty"`
+	SSHKeys  []SSHKey  `gorm:"foreignKey:UserID" json:"ssh_keys,omitempty"`
 }
 
 // TableName specifies the table name for User model

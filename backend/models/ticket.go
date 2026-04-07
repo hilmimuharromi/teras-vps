@@ -8,9 +8,9 @@ import (
 type TicketStatus string
 
 const (
-	TicketStatusOpen     TicketStatus = "open"
+	TicketStatusOpen       TicketStatus = "open"
 	TicketStatusInProgress TicketStatus = "in_progress"
-	TicketStatusClosed   TicketStatus = "closed"
+	TicketStatusClosed     TicketStatus = "closed"
 )
 
 // TicketPriority represents support ticket priority
@@ -53,8 +53,8 @@ type TicketMessage struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Relations
-	Ticket Ticket     `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
-	User   *User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Ticket Ticket `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
+	User   *User  `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 // TableName specifies the table name for TicketMessage model

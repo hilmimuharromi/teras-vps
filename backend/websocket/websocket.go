@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -9,7 +8,6 @@ import (
 	"teras-vps/backend/proxmox"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/websocket/v2"
 )
 
@@ -76,14 +74,14 @@ type VMStats struct {
 type StatsService struct {
 	hub      *Hub
 	proxmox  *proxmox.Client
-	stopChan  chan struct{}
+	stopChan chan struct{}
 }
 
 // NewStatsService creates a new stats service
 func NewStatsService(hub *Hub, proxmoxClient *proxmox.Client) *StatsService {
 	return &StatsService{
-		hub:     hub,
-		proxmox: proxmoxClient,
+		hub:      hub,
+		proxmox:  proxmoxClient,
 		stopChan: make(chan struct{}),
 	}
 }

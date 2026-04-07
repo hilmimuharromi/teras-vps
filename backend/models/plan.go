@@ -1,18 +1,14 @@
 package models
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 // Plan represents a pricing plan
 type Plan struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Name         string    `gorm:"uniqueIndex;size:50;not null" json:"name"`
 	Cores        int       `gorm:"not null" json:"cores"`
-	Memory       int       `gorm:"not null" json:"memory"`      // in MB
-	Disk         int       `gorm:"not null" json:"disk"`        // in GB
+	Memory       int       `gorm:"not null" json:"memory"`        // in MB
+	Disk         int       `gorm:"not null" json:"disk"`          // in GB
 	PriceMonthly int       `gorm:"not null" json:"price_monthly"` // in IDR
 	PriceDaily   int       `gorm:"not null" json:"price_daily"`   // in IDR
 	IsActive     bool      `gorm:"default:true" json:"is_active"`

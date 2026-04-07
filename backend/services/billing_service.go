@@ -35,11 +35,11 @@ func (s *BillingService) GenerateInvoice(userID uint, vmID *uint, amount int, de
 	invoice := models.Invoice{
 		UserID:        userID,
 		VMID:          vmID,
-		InvoiceNumber:  invoiceNumber,
+		InvoiceNumber: invoiceNumber,
 		Amount:        amount,
 		Status:        models.InvoiceStatusUnpaid,
 		DueDate:       dueDate,
-		PaymentMethod:  "qris", // Default payment method
+		PaymentMethod: "qris", // Default payment method
 	}
 
 	if err := s.db.Create(&invoice).Error; err != nil {
@@ -51,7 +51,7 @@ func (s *BillingService) GenerateInvoice(userID uint, vmID *uint, amount int, de
 		InvoiceID:     invoice.ID,
 		Amount:        amount,
 		Status:        models.TransactionStatusPending,
-		PaymentMethod:  "qris",
+		PaymentMethod: "qris",
 	}
 
 	if err := s.db.Create(&transaction).Error; err != nil {
@@ -110,7 +110,7 @@ func (s *BillingService) ProcessPayment(invoiceID uint, amount int, paymentRefer
 	// Update transaction
 	if err := tx.Model(&models.Transaction{}).Where("invoice_id = ? AND status = ?", invoiceID, models.TransactionStatusPending).Updates(map[string]interface{}{
 		"status":            models.TransactionStatusSuccess,
-		"gateway_reference":  paymentReference,
+		"gateway_reference": paymentReference,
 	}).Error; err != nil {
 		tx.Rollback()
 		return err

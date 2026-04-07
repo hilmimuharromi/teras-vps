@@ -231,12 +231,12 @@ func (c *AuthController) GetMe(ctx *fiber.Ctx) error {
 		"success": true,
 		"data": fiber.Map{
 			"user": fiber.Map{
-				"id":        user.ID,
-				"username":  user.Username,
-				"email":     user.Email,
-				"phone":     user.Phone,
-				"role":      user.Role,
-				"is_active": user.IsActive,
+				"id":         user.ID,
+				"username":   user.Username,
+				"email":      user.Email,
+				"phone":      user.Phone,
+				"role":       user.Role,
+				"is_active":  user.IsActive,
 				"created_at": user.CreatedAt,
 				"updated_at": user.UpdatedAt,
 			},

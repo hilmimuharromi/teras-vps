@@ -17,17 +17,17 @@ func NewAdminController(db *gorm.DB) *AdminController {
 
 // StatsResponse represents platform statistics
 type StatsResponse struct {
-	TotalUsers       int64 `json:"total_users"`
-	TotalVMs         int64 `json:"total_vms"`
-	RunningVMs       int64 `json:"running_vms"`
-	StoppedVMs       int64 `json:"stopped_vms"`
-	SuspendedVMs     int64 `json:"suspended_vms"`
-	TotalInvoices    int64 `json:"total_invoices"`
-	PaidInvoices     int64 `json:"paid_invoices"`
-	UnpaidInvoices   int64 `json:"unpaid_invoices"`
-	OverdueInvoices  int64 `json:"overdue_invoices"`
-	TotalRevenue     int64 `json:"total_revenue"`
-	MonthlyRevenue   int64 `json:"monthly_revenue"`
+	TotalUsers      int64 `json:"total_users"`
+	TotalVMs        int64 `json:"total_vms"`
+	RunningVMs      int64 `json:"running_vms"`
+	StoppedVMs      int64 `json:"stopped_vms"`
+	SuspendedVMs    int64 `json:"suspended_vms"`
+	TotalInvoices   int64 `json:"total_invoices"`
+	PaidInvoices    int64 `json:"paid_invoices"`
+	UnpaidInvoices  int64 `json:"unpaid_invoices"`
+	OverdueInvoices int64 `json:"overdue_invoices"`
+	TotalRevenue    int64 `json:"total_revenue"`
+	MonthlyRevenue  int64 `json:"monthly_revenue"`
 }
 
 // GetStats returns platform statistics

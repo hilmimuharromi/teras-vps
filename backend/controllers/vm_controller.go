@@ -13,8 +13,8 @@ import (
 )
 
 type VMController struct {
-	db     *gorm.DB
-	cfg    *config.Config
+	db      *gorm.DB
+	cfg     *config.Config
 	proxmox *proxmox.Client
 }
 
@@ -630,8 +630,8 @@ func (c *VMController) CreateBackup(ctx *fiber.Ctx) error {
 
 	// Create backup record in database
 	backup := models.Backup{
-		VMID:       vm.ID,
-		BackupName: input.Name,
+		VMID:        vm.ID,
+		BackupName:  input.Name,
 		StoragePath: fmt.Sprintf("/nodes/%s/qemu/%d/snapshot/%s", c.cfg.ProxmoxNode, vm.VMID, input.Name),
 	}
 

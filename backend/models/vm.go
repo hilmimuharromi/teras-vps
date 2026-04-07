@@ -24,8 +24,8 @@ type VM struct {
 	Hostname  string    `gorm:"size:100" json:"hostname"`
 	Status    VMStatus  `gorm:"size:20;default:stopped" json:"status"`
 	Cores     int       `gorm:"not null" json:"cores"`
-	Memory    int       `gorm:"not null" json:"memory"`      // in MB
-	Disk      int       `gorm:"not null" json:"disk"`        // in GB
+	Memory    int       `gorm:"not null" json:"memory"` // in MB
+	Disk      int       `gorm:"not null" json:"disk"`   // in GB
 	PublicIP  string    `gorm:"type:inet" json:"public_ip,omitempty"`
 	SSHPort   int       `gorm:"default:22" json:"ssh_port"`
 	VNCPort   int       `gorm:"default:5900" json:"vnc_port"`
@@ -36,10 +36,10 @@ type VM struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// Relations
-	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Plan      Plan      `gorm:"foreignKey:PlanID" json:"plan,omitempty"`
-	Backups   []Backup  `gorm:"foreignKey:VMID" json:"backups,omitempty"`
-	Invoices  []Invoice `gorm:"foreignKey:VMID" json:"invoices,omitempty"`
+	User     User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Plan     Plan      `gorm:"foreignKey:PlanID" json:"plan,omitempty"`
+	Backups  []Backup  `gorm:"foreignKey:VMID" json:"backups,omitempty"`
+	Invoices []Invoice `gorm:"foreignKey:VMID" json:"invoices,omitempty"`
 }
 
 // TableName specifies the table name for VM model

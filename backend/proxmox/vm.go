@@ -3,19 +3,20 @@ package proxmox
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // VMConfig represents VM configuration
 type VMConfig struct {
-	Name        string `json:"name"`
-	Cores       int    `json:"cores"`
-	Memory      int    `json:"memory"`
-	Disk        int    `json:"disk"`
-	IPConfig0   string `json:"ipconfig0"`
-	BootDisk    string `json:"bootdisk"`
-	OSType      string `json:"ostype"`
-	Network     string `json:"net0"`
-	SCSIHW      string `json:"scsihw"`
+	Name      string `json:"name"`
+	Cores     int    `json:"cores"`
+	Memory    int    `json:"memory"`
+	Disk      int    `json:"disk"`
+	IPConfig0 string `json:"ipconfig0"`
+	BootDisk  string `json:"bootdisk"`
+	OSType    string `json:"ostype"`
+	Network   string `json:"net0"`
+	SCSIHW    string `json:"scsihw"`
 }
 
 // CreateVM creates a new VM in Proxmox
@@ -23,20 +24,25 @@ func (c *Client) CreateVM(vmid int, name string, cores int, memory int, diskGB i
 	path := fmt.Sprintf("/nodes/%s/qemu", c.Node)
 
 	config := VMConfig{
-		Name:      name,
-		Cores:     cores,
-		Memory:    memory,
-		Disk:      diskGB,
-		OSType:    "l26",
-		Network:   "virtio,bridge=vmbr0",
-		SCSIHW:    "virtio-scsi-pci",
-		BootDisk:  "scsi0",
+		Name:     name,
+		Cores:    cores,
+		Memory:   memory,
+		Disk:     diskGB,
+		OSType:   "l26",
+		Network:  "virtio,bridge=vmbr0",
+		SCSIHW:   "virtio-scsi-pci",
+		BootDisk: "scsi0",
 	}
 
 	// If template is specified, clone from it
 	if template != "" {
+		// Convert template string to int (template ID) and clone from template
+		templateID, err := strconv.Atoi(template)
+		if err != nil {
+			return fmt.Errorf("invalid template id: %v", err)
+		}
 		// Clone from template
-		return c.CloneVM(vmid, name, template)
+		return c.CloneVM(vmid, name, templateID)
 	}
 
 	_, err := c.Request("POST", path, config)

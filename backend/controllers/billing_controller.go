@@ -147,8 +147,8 @@ func (c *BillingController) PayInvoice(ctx *fiber.Ctx) error {
 			"details": fiber.Map{
 				"invoice_id":     invoice.ID,
 				"invoice_number": invoice.InvoiceNumber,
-				"amount":        invoice.Amount,
-				"due_date":      invoice.DueDate,
+				"amount":         invoice.Amount,
+				"due_date":       invoice.DueDate,
 			},
 		},
 	})

@@ -36,10 +36,10 @@ type Config struct {
 	ProxmoxNode     string
 
 	// Business Logic
-	MaxVMsPerUser     int
-	SuspendDays       int // days after due date to suspend
-	DeleteDays        int // days after due date to delete
-	MaxBackupsPerVM   int
+	MaxVMsPerUser   int
+	SuspendDays     int // days after due date to suspend
+	DeleteDays      int // days after due date to delete
+	MaxBackupsPerVM int
 
 	// Currency
 	Currency string
@@ -54,7 +54,7 @@ func Load() *Config {
 	maxBackupsPerVM, _ := strconv.Atoi(getEnv("MAX_BACKUPS_PER_VM", "3"))
 
 	return &Config{
-		Port:       getEnv("PORT", "3000"),
+		Port:        getEnv("PORT", "3000"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:4321"),
 
 		// Database
