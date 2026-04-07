@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="TerasVPS - Your VPS Panel">
+	<div class="min-h-screen flex items-center justify-center">
+		<div class="text-center">
+			<h1 class="text-6xl font-bold mb-4">TerasVPS</h1>
+			<p class="text-xl text-muted-foreground mb-8">
+				Your VPS Panel - Built with Go Fiber + Astro
+			</p>
+			<div class="space-x-4">
+				<a href="/auth/login" class="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">
+					Login
+				</a>
+				<a href="/auth/register" class="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90">
+					Register
+				</a>
+			</div>
+		</div>
+	</div>
+</Layout>

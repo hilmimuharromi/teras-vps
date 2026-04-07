@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: teras-vps-db
+    environment:
+      POSTGRES_USER: teras_vps
+      POSTGRES_PASSWORD: teras_vps_password
+      POSTGRES_DB: teras_vps
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - teras-vps-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: teras-vps-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - teras-vps-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: teras-vps-backend
+    ports:
+      - "3000:3000"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: teras_vps
+      POSTGRES_PASSWORD: teras_vps_password
+      POSTGRES_DB: teras_vps
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-jwt-secret-key-change-in-production
+      PROXMOX_HOST: https://your-proxmox-ip:8006/api2/json
+      PROXMOX_USER: root@pam
+      PROXMOX_PASSWORD: your-proxmox-password
+      PROXMOX_NODE: proxmox
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - teras-vps-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: teras-vps-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - teras-vps-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  teras-vps-network:
+    driver: bridge

@@ -1,0 +1,58 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+.nuxt/
+.next/
+.cache/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+backend/teras-vps
+backend/*.test
+backend/vendor/
+go.work
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+build/
+dist/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.temp/
