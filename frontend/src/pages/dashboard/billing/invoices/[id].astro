@@ -1,36 +1,41 @@
 ---
-import DashboardLayout from '../../../../layouts/Dashboard.astro';
+export const prerender = false;
+import DashboardLayout from "../../../../layouts/Dashboard.astro";
 ---
 
 <DashboardLayout title="Invoice Details - TerasVPS">
-  <div id="invoiceDetail" class="space-y-6">
-    <div class="text-center py-8 text-muted-foreground">
-      Loading invoice details...
+    <div id="invoiceDetail" class="space-y-6">
+        <div class="text-center py-8 text-muted-foreground">
+            Loading invoice details...
+        </div>
     </div>
-  </div>
 
-  <script>
-    // Get invoice ID from URL
-    const pathParts = window.location.pathname.split('/');
-    const invoiceId = pathParts[pathParts.length - 1];
+    <script>
+        // Get invoice ID from URL
+        const pathParts = window.location.pathname.split("/");
+        const invoiceId = pathParts[pathParts.length - 1];
 
-    // Fetch invoice details
-    async function fetchInvoice() {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/v1/billing/invoices/${invoiceId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        // Fetch invoice details
+        async function fetchInvoice() {
+            try {
+                const token = localStorage.getItem("token");
+                const response = await fetch(
+                    `/api/v1/billing/invoices/${invoiceId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    },
+                );
 
-        const data = await response.json();
+                const data = await response.json();
 
-        if (data.success) {
-          const invoice = data.data.invoice;
-          const invoiceDetail = document.getElementById('invoiceDetail');
+                if (data.success) {
+                    const invoice = data.data.invoice;
+                    const invoiceDetail =
+                        document.getElementById("invoiceDetail");
 
-          invoiceDetail.innerHTML = `
+                    invoiceDetail.innerHTML = `
             <div>
               <div class="flex justify-between items-center mb-6">
                 <div>
@@ -40,10 +45,13 @@ import DashboardLayout from '../../../../layouts/Dashboard.astro';
                   </p>
                 </div>
                 <span class="px-4 py-2 rounded-lg text-sm font-semibold ${
-                  invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                  invoice.status === 'unpaid' ? 'bg-yellow-100 text-yellow-800' :
-                  invoice.status === 'overdue' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
+                    invoice.status === "paid"
+                        ? "bg-green-100 text-green-800"
+                        : invoice.status === "unpaid"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : invoice.status === "overdue"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
                 }">
                   ${invoice.status.toUpperCase()}
                 </span>
@@ -61,17 +69,23 @@ import DashboardLayout from '../../../../layouts/Dashboard.astro';
                     <p class="text-sm text-muted-foreground">Due Date</p>
                     <p class="text-lg font-semibold">${new Date(invoice.due_date).toLocaleDateString()}</p>
                   </div>
-                  ${invoice.paid_date ? `
+                  ${
+                      invoice.paid_date
+                          ? `
                   <div>
                     <p class="text-sm text-muted-foreground">Paid Date</p>
                     <p class="text-lg font-semibold">${new Date(invoice.paid_date).toLocaleDateString()}</p>
                   </div>
                   <div>
                     <p class="text-sm text-muted-foreground">Payment Method</p>
-                    <p class="text-lg font-semibold">${invoice.payment_method || 'N/A'}</p>
+                    <p class="text-lg font-semibold">${invoice.payment_method || "N/A"}</p>
                   </div>
-                  ` : ''}
-                  ${invoice.vm ? `
+                  `
+                          : ""
+                  }
+                  ${
+                      invoice.vm
+                          ? `
                   <div class="col-span-2">
                     <p class="text-sm text-muted-foreground">Virtual Machine</p>
                     <p class="text-lg font-semibold">${invoice.vm.name} (${invoice.vm.hostname})</p>
@@ -79,12 +93,16 @@ import DashboardLayout from '../../../../layouts/Dashboard.astro';
                       ${invoice.vm.cores} Cores / ${invoice.vm.memory}MB RAM / ${invoice.vm.disk}GB Disk
                     </p>
                   </div>
-                  ` : ''}
+                  `
+                          : ""
+                  }
                 </div>
               </div>
 
               <!-- Actions -->
-              ${invoice.status !== 'paid' ? `
+              ${
+                  invoice.status !== "paid"
+                      ? `
               <div class="space-y-4">
                 <button
                   onclick="payInvoice()"
@@ -96,13 +114,15 @@ import DashboardLayout from '../../../../layouts/Dashboard.astro';
                   Payment gateway integration coming soon!
                 </p>
               </div>
-              ` : `
+              `
+                      : `
               <div class="p-6 bg-green-50 border border-green-200 rounded-lg">
                 <p class="text-center text-green-800 font-semibold">
                   ✅ This invoice has been paid
                 </p>
               </div>
-              `}
+              `
+              }
 
               <div class="mt-6">
                 <a
@@ -114,44 +134,47 @@ import DashboardLayout from '../../../../layouts/Dashboard.astro';
               </div>
             </div>
           `;
-        }
-      } catch (error) {
-        console.error('Failed to fetch invoice:', error);
-        document.getElementById('invoiceDetail').innerHTML = `
+                }
+            } catch (error) {
+                console.error("Failed to fetch invoice:", error);
+                document.getElementById("invoiceDetail").innerHTML = `
           <div class="text-center py-8 text-destructive">
             Failed to load invoice details. Please try again.
           </div>
         `;
-      }
-    }
-
-    // Pay invoice
-    async function payInvoice() {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/v1/billing/invoices/${invoiceId}/pay`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ payment_method: 'qris' }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          alert('Payment successful!');
-          fetchInvoice();
-        } else {
-          alert('Payment failed: ' + data.error.message);
+            }
         }
-      } catch (error) {
-        alert('Payment failed: ' + error);
-      }
-    }
 
-    // Fetch invoice on load
-    fetchInvoice();
-  </script>
+        // Pay invoice
+        async function payInvoice() {
+            try {
+                const token = localStorage.getItem("token");
+                const response = await fetch(
+                    `/api/v1/billing/invoices/${invoiceId}/pay`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ payment_method: "qris" }),
+                    },
+                );
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert("Payment successful!");
+                    fetchInvoice();
+                } else {
+                    alert("Payment failed: " + data.error.message);
+                }
+            } catch (error) {
+                alert("Payment failed: " + error);
+            }
+        }
+
+        // Fetch invoice on load
+        fetchInvoice();
+    </script>
 </DashboardLayout>
