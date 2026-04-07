@@ -4,8 +4,8 @@ import (
 	"teras-vps/backend/controllers"
 	"teras-vps/backend/middleware"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
