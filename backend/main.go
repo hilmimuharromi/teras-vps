@@ -12,7 +12,9 @@ import (
 
 	"teras-vps/backend/config"
 	"teras-vps/backend/database"
+	"teras-vps/backend/proxmox"
 	"teras-vps/backend/routes"
+	"teras-vps/backend/websocket"
 )
 
 func main() {
@@ -72,6 +74,15 @@ func main() {
 
 	// Setup routes
 	routes.Setup(app, db, redis)
+
+	// Setup WebSocket
+	hub := websocket.NewHub()
+	proxmoxClient, err := proxmox.NewClient()
+	if err != nil {
+		log.Printf("Warning: Failed to initialize Proxmox client: %v", err)
+	} else {
+		websocket.SetupWebSocket(app, hub, proxmoxClient)
+	}
 
 	// Start server
 	port := os.Getenv("PORT")

@@ -1,0 +1,338 @@
+---
+import DashboardLayout from '../../../layouts/Dashboard.astro';
+---
+
+<DashboardLayout title="VM Details - TerasVPS">
+  <div id="vmDetail" class="space-y-6">
+    <div class="text-center py-8 text-muted-foreground">
+      Loading VM details...
+    </div>
+  </div>
+
+  <script>
+    // Get VM ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const vmId = pathParts[pathParts.length - 1];
+
+    // VM state
+    let vmState = null;
+    let cpuData = [];
+    let memoryData = [];
+    let diskData = [];
+    let ws = null;
+
+    // Connect to WebSocket for real-time updates
+    function connectWebSocket() {
+      ws = new WebSocket('ws://localhost:3000/ws/vm-stats');
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        // Update stats if this is our VM
+        if (data.vmid === vmState?.vmid) {
+          updateStats(data);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed, reconnecting...');
+        setTimeout(connectWebSocket, 5000);
+      };
+    }
+
+    // Update statistics
+    function updateStats(stats) {
+      // Keep only last 30 data points
+      if (cpuData.length >= 30) {
+        cpuData.shift();
+        memoryData.shift();
+        diskData.shift();
+      }
+
+      const timestamp = new Date().toLocaleTimeString();
+
+      cpuData.push({ time: timestamp, value: stats.cpu });
+      memoryData.push({ time: timestamp, value: (stats.memory / stats.memory_max) * 100 });
+      diskData.push({ time: timestamp, value: (stats.disk / stats.disk_max) * 100 });
+
+      // Update displays
+      document.getElementById('cpuDisplay').textContent = stats.cpu.toFixed(1) + '%';
+      document.getElementById('memoryDisplay').textContent = (stats.memory / 1024 / 1024).toFixed(1) + ' MB';
+      document.getElementById('diskDisplay').textContent = (stats.disk / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+
+      // Update status
+      const statusBadge = document.getElementById('statusBadge');
+      statusBadge.textContent = stats.status.toUpperCase();
+      statusBadge.className = `px-4 py-2 rounded-lg text-sm font-semibold ${
+        stats.status === 'running' ? 'bg-green-100 text-green-800' :
+        stats.status === 'stopped' ? 'bg-red-100 text-red-800' :
+        'bg-yellow-100 text-yellow-800'
+      }`;
+
+      // Draw charts
+      drawCharts();
+    }
+
+    // Draw simple charts using canvas
+    function drawCharts() {
+      drawChart('cpuChart', cpuData, '#22c55e', 100);
+      drawChart('memoryChart', memoryData, '#3b82f6', 100);
+      drawChart('diskChart', diskData, '#f59e0b', 100);
+    }
+
+    // Draw chart on canvas
+    function drawChart(canvasId, data, color, maxValue) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      if (data.length === 0) return;
+
+      // Draw line
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+
+      const step = width / (data.length - 1);
+
+      data.forEach((point, index) => {
+        const x = index * step;
+        const y = height - (point.value / maxValue) * height;
+
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.stroke();
+
+      // Draw fill
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.fillStyle = color + '20';
+      ctx.fill();
+    }
+
+    // Fetch VM details
+    async function fetchVM() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/vms/${vmId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          vmState = data.data.vm;
+          const vmDetail = document.getElementById('vmDetail');
+
+          vmDetail.innerHTML = `
+            <div>
+              <div class="flex justify-between items-center mb-6">
+                <div>
+                  <h1 class="text-3xl font-bold">${vmState.name}</h1>
+                  <p class="mt-2 text-muted-foreground">${vmState.hostname}</p>
+                </div>
+                <span id="statusBadge" class="px-4 py-2 rounded-lg text-sm font-semibold ${
+                  vmState.status === 'running' ? 'bg-green-100 text-green-800' :
+                  vmState.status === 'stopped' ? 'bg-red-100 text-red-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }">
+                  ${vmState.status.toUpperCase()}
+                </span>
+              </div>
+
+              <!-- VM Info Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">CPU</p>
+                  <p class="text-2xl font-bold">${vmState.cores} Cores</p>
+                </div>
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">Memory</p>
+                  <p class="text-2xl font-bold">${vmState.memory} MB</p>
+                </div>
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">Disk</p>
+                  <p class="text-2xl font-bold">${vmState.disk} GB</p>
+                </div>
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">IP Address</p>
+                  <p class="text-lg font-semibold">${vmState.public_ip || 'N/A'}</p>
+                </div>
+              </div>
+
+              <!-- Real-time Stats -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">CPU Usage</p>
+                  <p id="cpuDisplay" class="text-3xl font-bold text-green-600">0%</p>
+                  <canvas id="cpuChart" width="300" height="100"></canvas>
+                </div>
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">Memory Usage</p>
+                  <p id="memoryDisplay" class="text-3xl font-bold text-blue-600">0 MB</p>
+                  <canvas id="memoryChart" width="300" height="100"></canvas>
+                </div>
+                <div class="p-4 bg-card rounded-lg border border-border">
+                  <p class="text-sm text-muted-foreground">Disk Usage</p>
+                  <p id="diskDisplay" class="text-3xl font-bold text-yellow-600">0 GB</p>
+                  <canvas id="diskChart" width="300" height="100"></canvas>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex space-x-4 mb-6">
+                <button
+                  onclick="startVM()"
+                  class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  ${vmState.status === 'running' ? 'disabled' : ''}
+                >
+                  ▶️ Start
+                </button>
+                <button
+                  onclick="stopVM()"
+                  class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  ${vmState.status === 'stopped' ? 'disabled' : ''}
+                >
+                  ⏹️ Stop
+                </button>
+                <button
+                  onclick="rebootVM()"
+                  class="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                  ${vmState.status !== 'running' ? 'disabled' : ''}
+                >
+                  🔄 Reboot
+                </button>
+              </div>
+
+              <!-- Back to list -->
+              <div>
+                <a
+                  href="/dashboard/vms"
+                  class="text-primary hover:underline"
+                >
+                  ← Back to VMs
+                </a>
+              </div>
+            </div>
+          `;
+
+          // Connect to WebSocket
+          connectWebSocket();
+        }
+      } catch (error) {
+        console.error('Failed to fetch VM:', error);
+        document.getElementById('vmDetail').innerHTML = `
+          <div class="text-center py-8 text-destructive">
+            Failed to load VM details. Please try again.
+          </div>
+        `;
+      }
+    }
+
+    // Start VM
+    async function startVM() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/vms/${vmId}/start`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('VM started successfully!');
+          fetchVM();
+        } else {
+          alert('Failed to start VM: ' + data.error.message);
+        }
+      } catch (error) {
+        alert('Failed to start VM: ' + error);
+      }
+    }
+
+    // Stop VM
+    async function stopVM() {
+      if (!confirm('Are you sure you want to stop this VM?')) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/vms/${vmId}/stop`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('VM stopped successfully!');
+          fetchVM();
+        } else {
+          alert('Failed to stop VM: ' + data.error.message);
+        }
+      } catch (error) {
+        alert('Failed to stop VM: ' + error);
+      }
+    }
+
+    // Reboot VM
+    async function rebootVM() {
+      if (!confirm('Are you sure you want to reboot this VM?')) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/vms/${vmId}/reboot`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('VM reboot initiated successfully!');
+        } else {
+          alert('Failed to reboot VM: ' + data.error.message);
+        }
+      } catch (error) {
+        alert('Failed to reboot VM: ' + error);
+      }
+    }
+
+    // Fetch VM on load
+    fetchVM();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (ws) {
+        ws.close();
+      }
+    });
+  </script>
+</DashboardLayout>
