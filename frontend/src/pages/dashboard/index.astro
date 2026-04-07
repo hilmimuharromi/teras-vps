@@ -1,0 +1,73 @@
+---
+import DashboardLayout from '../../layouts/Dashboard.astro';
+---
+
+<DashboardLayout title="Dashboard - TerasVPS">
+  <div class="space-y-8">
+    <div>
+      <h1 class="text-3xl font-bold">Welcome to TerasVPS</h1>
+      <p class="mt-2 text-muted-foreground">Manage your virtual machines with ease</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="p-6 bg-card rounded-lg border border-border">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Active VMs</p>
+            <p class="text-3xl font-bold mt-1">0</p>
+          </div>
+          <div class="text-4xl">🖥️</div>
+        </div>
+      </div>
+
+      <div class="p-6 bg-card rounded-lg border border-border">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Total Invoices</p>
+            <p class="text-3xl font-bold mt-1">0</p>
+          </div>
+          <div class="text-4xl">💳</div>
+        </div>
+      </div>
+
+      <div class="p-6 bg-card rounded-lg border border-border">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Unpaid Invoices</p>
+            <p class="text-3xl font-bold mt-1">0</p>
+          </div>
+          <div class="text-4xl">⚠️</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a
+          href="/dashboard/vms"
+          class="flex items-center p-6 bg-card rounded-lg border border-border hover:border-primary transition-colors"
+        >
+          <div class="mr-4 text-4xl">➕</div>
+          <div>
+            <h3 class="font-semibold">Create New VM</h3>
+            <p class="text-sm text-muted-foreground">Provision a new virtual machine</p>
+          </div>
+        </a>
+
+        <a
+          href="/dashboard/billing"
+          class="flex items-center p-6 bg-card rounded-lg border border-border hover:border-primary transition-colors"
+        >
+          <div class="mr-4 text-4xl">💳</div>
+          <div>
+            <h3 class="font-semibold">View Invoices</h3>
+            <p class="text-sm text-muted-foreground">Manage your billing</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>

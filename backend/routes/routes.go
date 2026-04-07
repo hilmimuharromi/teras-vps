@@ -2,6 +2,7 @@ package routes
 
 import (
 	"teras-vps/backend/controllers"
+	"teras-vps/backend/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
@@ -17,10 +18,14 @@ func Setup(app *fiber.App, db *gorm.DB, redis *redis.Client) {
 	userController := controllers.NewUserController(db)
 	adminController := controllers.NewAdminController(db)
 
+	// Initialize middleware
+	authMiddleware := middleware.Auth(db)
+	adminMiddleware := middleware.AdminOnly(db)
+
 	// API v1
 	api := app.Group("/api/v1")
 
-	// Public routes
+	// Health check (public)
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,
@@ -34,12 +39,11 @@ func Setup(app *fiber.App, db *gorm.DB, redis *redis.Client) {
 	auth.Post("/register", authController.Register)
 	auth.Post("/login", authController.Login)
 	auth.Post("/logout", authController.Logout)
-	auth.Get("/me", authController.GetMe)
+	auth.Get("/me", authMiddleware, authController.GetMe)
 
 	// Protected routes (require authentication)
-	// TODO: Add JWT middleware
 	protected := api.Group("")
-	// protected.Use(middleware.Auth()) // Will be implemented later
+	protected.Use(authMiddleware)
 
 	// VM routes
 	vm := protected.Group("/vms")
@@ -75,9 +79,9 @@ func Setup(app *fiber.App, db *gorm.DB, redis *redis.Client) {
 	user.Put("/password", userController.ChangePassword)
 
 	// Admin routes (require admin role)
-	// TODO: Add admin middleware
 	admin := api.Group("/admin")
-	// admin.Use(middleware.Admin()) // Will be implemented later
+	admin.Use(authMiddleware)
+	admin.Use(adminMiddleware)
 	admin.Get("/users", adminController.ListUsers)
 	admin.Get("/vms", adminController.ListAllVMs)
 	admin.Get("/stats", adminController.GetStats)
