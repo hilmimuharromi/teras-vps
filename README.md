@@ -1,163 +1,339 @@
-# TerasVPS - VPS Panel for Selling Hosting
+# 🚀 TerasVPS
 
-**Your own VPS panel built with Go Fiber + Astro**
+VPS Hosting Indonesia dengan Harga Terjangkau - Platform VPS berbasis Proxmox dengan integrasi otomatis.
 
-![Go](https://img.shields.io/badge/Go-00ADD8?style=flat&logo=go&logoColor=white)
-![Astro](https://img.shields.io/badge/Astro-FF5D01?style=flat&logo=astro&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+## 📋 Fitur Utama
 
----
+- ✅ **VM Management**: Buat, kelola, dan monitor VPS dari panel
+- ✅ **Real-time Monitoring**: Chart CPU, Memory, dan Disk secara live
+- ✅ **Billing Otomatis**: Invoice bulanan dengan auto-suspend
+- ✅ **Support Ticket**: Buka tiket support dan komunikasi langsung
+- ✅ **Payment Integration**: Pembayaran online via Xendit
+- ✅ **Admin Panel**: Kelola user, VM, invoice, dan support ticket
+- ✅ **SSH Key Management**: Upload SSH key untuk akses VM
 
-## 📋 Overview
+## 🏗️ Teknologi
 
-TerasVPS is a self-hosted VPS management panel that allows you to sell VPS instances from your mini PC (Proxmox-based) to customers.
+### Backend
+- **Go** (Golang) - Backend API
+- **Fiber** - Web framework
+- **PostgreSQL** - Database
+- **Redis** - Cache & sessions
+- **GORM** - ORM
 
-### Features
+### Frontend
+- **Astro** - Static site generator
+- **React** - UI components
+- **TailwindCSS** - Styling
+- **Shadcn/ui** - UI components
 
-- ✅ User registration & authentication (JWT)
-- ✅ Create/Manage VMs (Start, Stop, Reboot)
-- ✅ Real-time monitoring (CPU, RAM, Disk)
-- ✅ Billing system with invoice generation
-- ✅ Payment gateway integration (QRIS - coming soon)
-- ✅ Automatic suspend/delete for overdue invoices
-- ✅ Backup system (create, restore)
-- ✅ SSH keys management
-- ✅ Admin dashboard
-- ✅ VNC console access
+### Infrastructure
+- **Proxmox** - Virtualization platform
+- **Docker** - Containerization
+- **Nginx** - Reverse proxy
 
----
+## 📦 Instalasi
 
-## 🏗️ Architecture
+### Prerequisites
+- Docker & Docker Compose
+- PostgreSQL (atau via Docker)
+- Redis (atau via Docker)
+- Proxmox Server
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/hilmimuharromi/teras-vps.git
+cd teras-vps
+```
+
+### 2. Setup Environment Variables
+
+Copy file `.env.example` dan sesuaikan konfigurasi:
+
+**Backend:**
+```bash
+cd backend
+cp .env.example .env
+nano .env
+```
+
+**Frontend:**
+```bash
+cd frontend
+cp .env.example .env
+nano .env
+```
+
+### 3. Update Konfigurasi Penting
+
+Di `backend/.env`, pastikan update:
+
+```env
+# Database password
+DB_PASSWORD=your_secure_password_here
+
+# JWT secret (gunakan string panjang & random)
+JWT_SECRET=your_very_long_random_secret_key_change_this_in_production
+
+# Proxmox credentials
+PROXMOX_HOST=https://your-proxmox-server.com:8006
+PROXMOX_USER=root@pam
+PROXMOX_PASSWORD=your_proxmox_password
+
+# Xendit API key
+XENDIT_SECRET_KEY=your_xendit_secret_key_here
+
+# Admin default
+ADMIN_EMAIL=admin@terasvps.id
+ADMIN_PASSWORD=Admin123!
+```
+
+### 4. Jalankan dengan Docker
+
+```bash
+# Dari root directory project
+docker-compose up -d
+
+# Cek status
+docker-compose ps
+
+# Lihat logs
+docker-compose logs -f backend
+```
+
+### 5. Setup Database
+
+```bash
+# Jalankan migration
+docker-compose exec backend go run migrations/migrate.go
+
+# Atau via Docker build (jika ada seeder)
+docker-compose exec backend go run main.go seed
+```
+
+### 6. Akses Aplikasi
+
+- **Frontend**: http://localhost:4321
+- **Backend API**: http://localhost:3000
+- **Admin Panel**: http://localhost:4321/admin
+
+Login admin default:
+- Email: `admin@terasvps.id`
+- Password: `Admin123!`
+
+## 📁 Struktur Project
 
 ```
 teras-vps/
-├── backend/          # Go Fiber API Server
-├── frontend/         # Astro Frontend
-├── docker/           # Docker Compose
-├── scripts/          # Deployment Scripts
-└── docs/             # Documentation
+├── backend/
+│   ├── controllers/      # API handlers
+│   ├── cron/            # Scheduled jobs (billing)
+│   ├── database/        # Database migrations
+│   ├── middleware/      # Auth, Admin, Logging
+│   ├── models/          # Database models
+│   ├── proxmox/         # Proxmox integration
+│   ├── routes/          # API routes
+│   ├── services/        # Business logic
+│   ├── utils/           # Helper functions
+│   ├── websocket/       # WebSocket server
+│   └── main.go          # Entry point
+├── frontend/
+│   ├── src/
+│   │   ├── pages/       # Halaman aplikasi
+│   │   ├── components/  # UI components
+│   │   └── layouts/     # Layout components
+│   └── public/          # Static assets
+├── deploy/              # Deployment configs
+│   ├── nginx.conf       # Nginx config
+│   └── terasvps.service # Systemd service
+├── docker-compose.yml   # Docker setup
+└── README.md           # Documentation
 ```
 
----
+## 🔧 Konfigurasi Penting
 
-## 🚀 Quick Start
+### Proxmox Settings
 
-### Prerequisites
+Pastikan Proxmox server di-setup dengan:
+- API user dengan permission
+- Storage untuk VM
+- Network bridge (vmbr0)
+- Resource pools untuk isolasi
 
-- Go 1.21+
-- Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
-- Proxmox VE 7+
+### Billing Automation
 
-### Development Setup
+Cron jobs otomatis berjalan:
+- Invoice generation: Setiap tanggal 1
+- Auto-suspend: 7 hari setelah due date
+- Auto-delete: 14 hari setelah due date
+
+### Payment Gateway
+
+Saat ini mendukung:
+- **Xendit** (utama)
+- Stripe (opsional - perlu di-setup)
+
+## 🚀 Deployment
+
+### Deploy ke Mini PC / VPS
 
 ```bash
 # Clone repository
 git clone https://github.com/hilmimuharromi/teras-vps.git
 cd teras-vps
 
-# Backend setup
+# Setup environment
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+nano backend/.env
+
+# Build dan start
+docker-compose up -d
+
+# Setup SSL dengan Let's Encrypt
+certbot certonly --nginx -d terasvps.id
+```
+
+### Nginx Configuration
+
+Copy `deploy/nginx.conf` ke `/etc/nginx/sites-available/terasvps`:
+
+```bash
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/terasvps
+sudo ln -s /etc/nginx/sites-available/terasvps /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### Systemd Service
+
+Untuk auto-start saat boot:
+
+```bash
+sudo cp deploy/terasvps.service /etc/systemd/system/
+sudo systemctl enable terasvps
+sudo systemctl start terasvps
+```
+
+## 📊 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register user baru
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user
+
+### VM Management
+- `GET /api/vms` - List semua VM user
+- `GET /api/vms/:id` - Detail VM
+- `POST /api/vms` - Buat VM baru
+- `POST /api/vms/:id/start` - Start VM
+- `POST /api/vms/:id/stop` - Stop VM
+- `POST /api/vms/:id/reboot` - Reboot VM
+- `DELETE /api/vms/:id` - Delete VM
+
+### Billing
+- `GET /api/billing/invoices` - List invoice
+- `GET /api/billing/invoices/:id` - Detail invoice
+- `POST /api/billing/pay/:id` - Bayar invoice
+
+### Support
+- `GET /api/support/tickets` - List tickets
+- `POST /api/support/tickets` - Buat ticket
+- `POST /api/support/tickets/:id/messages` - Kirim message
+
+### Admin
+- `GET /api/admin/stats` - Platform statistics
+- `GET /api/admin/users` - List semua user
+- `POST /api/admin/users/:id/suspend` - Suspend user
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+cd backend
+go test ./...
+
+# Run specific test
+go test ./controllers/vm_controller_test.go
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+## 📝 Development
+
+### Backend Development
+
+```bash
 cd backend
 go mod download
-cp .env.example .env
-# Edit .env with your credentials
+go run main.go
+```
 
-# Frontend setup
-cd ../frontend
+### Frontend Development
+
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
----
-
-## 🐳 Docker Setup
+### WebSocket Testing
 
 ```bash
-# Start all services
-docker-compose up -d
-
-# Run database migrations
-docker-compose exec backend go run migrations/main.go
+# Connect ke WebSocket server
+wscat -c ws://localhost:3000/ws/vm/1?token=your_jwt_token
 ```
 
----
+## 🔒 Security
 
-## 📊 Tech Stack
+- ✅ JWT authentication
+- ✅ Password hashing (bcrypt)
+- ✅ SQL injection prevention (GORM)
+- ✅ CORS configuration
+- ✅ Rate limiting (Fiber middleware)
+- ✅ HTTPS ready
 
-### Backend
-- **Framework:** Go Fiber v2
-- **Database:** PostgreSQL + GORM
-- **Cache:** Redis
-- **Auth:** JWT
-- **Proxmox:** proxmox-api-go
+## 🐛 Troubleshooting
 
-### Frontend
-- **Framework:** Astro
-- **Styling:** TailwindCSS
-- **Components:** Shadcn/ui
-- **Charts:** Recharts
-- **Icons:** Lucide React
-
----
-
-## 📖 Documentation
-
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [API Documentation](docs/API.md)
-- [User Manual](docs/USER_MANUAL.md)
-
----
-
-## 🔧 Configuration
-
-See `.env.example` for all available environment variables.
-
-### Key Environment Variables
-
+### Database Connection Error
 ```bash
-# Database
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=teras_vps
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=teras_vps
+# Check PostgreSQL status
+docker-compose ps postgres
 
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# JWT
-JWT_SECRET=your_secret_key
-
-# Proxmox
-PROXMOX_HOST=https://your-proxmox-ip:8006/api2/json
-PROXMOX_USER=root@pam
-PROXMOX_PASSWORD=your_proxmox_password
+# View logs
+docker-compose logs postgres
 ```
 
----
+### Proxmox API Error
+```bash
+# Verify Proxmox credentials
+curl -k https://your-proxmox:8006/api2/json/version
+```
 
-## 🤝 Contributing
+### Redis Connection Error
+```bash
+# Check Redis status
+docker-compose ps redis
 
-Contributions are welcome! Please open an issue or PR.
-
----
+# Test Redis connection
+docker-compose exec redis redis-cli ping
+```
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
----
+MIT License - Free untuk penggunaan personal & komersial
 
 ## 👨‍💻 Author
 
-**Hilmi Muharromi** - [@hilmi_muharromi](https://twitter.com/hilmi_muharromi)
+Hilmi Muharromi - https://github.com/hilmimuharromi
+
+## 🤝 Kontribusi
+
+Pull requests welcome! Silakan buat issue untuk bug report atau feature request.
 
 ---
 
-## 🙏 Acknowledgments
-
-- Built with [Go Fiber](https://docs.gofiber.io)
-- Frontend powered by [Astro](https://astro.build)
-- UI components from [Shadcn/ui](https://ui.shadcn.com)
+**Made with ❤️ in Indonesia**

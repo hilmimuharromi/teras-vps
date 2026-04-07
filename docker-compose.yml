@@ -3,69 +3,83 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: teras-vps-db
+    container_name: teras-vps-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: teras_vps
-      POSTGRES_PASSWORD: teras_vps_password
-      POSTGRES_DB: teras_vps
+      POSTGRES_USER: terasvps
+      POSTGRES_PASSWORD: terasvps_password
+      POSTGRES_DB: terasvps
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - teras-vps-network
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: teras-vps-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
       - teras-vps-network
-    restart: unless-stopped
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: ./backend
     container_name: teras-vps-backend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: teras_vps
-      POSTGRES_PASSWORD: teras_vps_password
-      POSTGRES_DB: teras_vps
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: terasvps
+      DB_PASSWORD: terasvps_password
+      DB_NAME: terasvps
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: your-jwt-secret-key-change-in-production
-      PROXMOX_HOST: https://your-proxmox-ip:8006/api2/json
+      JWT_SECRET: your_jwt_secret_change_this
+      PROXMOX_HOST: https://your-proxmox-host:8006/api2/json
       PROXMOX_USER: root@pam
-      PROXMOX_PASSWORD: your-proxmox-password
-      PROXMOX_NODE: proxmox
+      PROXMOX_PASSWORD: your_proxmox_password
+      XENDIT_API_KEY: your_xendit_api_key
+      PORT: 3000
     depends_on:
       - postgres
       - redis
     networks:
       - teras-vps-network
-    restart: unless-stopped
+    command: sh -c "./wait-for-postgres.sh postgres:5432 && ./teras-vps"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    build: ./frontend
     container_name: teras-vps-frontend
+    restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
       - teras-vps-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: teras-vps-nginx
     restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - teras-vps-network
 
 volumes:
   postgres_data:

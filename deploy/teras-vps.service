@@ -1,0 +1,37 @@
+[Unit]
+Description=TerasVPS Backend API
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=terasvps
+Group=terasvps
+WorkingDirectory=/opt/teras-vps/backend
+ExecStart=/opt/teras-vps/backend/teras-vps
+Restart=on-failure
+RestartSec=5
+
+# Environment variables
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=5432"
+Environment="DB_USER=terasvps"
+Environment="DB_PASSWORD=CHANGE_THIS"
+Environment="DB_NAME=terasvps"
+Environment="REDIS_HOST=localhost"
+Environment="REDIS_PORT=6379"
+Environment="JWT_SECRET=CHANGE_THIS_TO_RANDOM_STRING"
+Environment="PROXMOX_HOST=https://your-proxmox-host:8006/api2/json"
+Environment="PROXMOX_USER=root@pam"
+Environment="PROXMOX_PASSWORD=CHANGE_THIS"
+Environment="XENDIT_API_KEY=CHANGE_THIS"
+Environment="PORT=3000"
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/teras-vps
+
+[Install]
+WantedBy=multi-user.target
