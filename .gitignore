@@ -1,7 +1,9 @@
 # Environment variables
-.env
-.env.local
-.env.*.local
+|.env
+|.env.local
+|.env.*.local
+|.github_token
+|.git-credentials
 
 # IDE
 .vscode/
