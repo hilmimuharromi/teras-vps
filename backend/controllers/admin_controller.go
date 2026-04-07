@@ -101,6 +101,11 @@ func (c *AdminController) ListAllUsers(ctx *fiber.Ctx) error {
 	})
 }
 
+// ListUsers is a compatibility wrapper for ListAllUsers so routes can call adminController.ListUsers
+func (c *AdminController) ListUsers(ctx *fiber.Ctx) error {
+	return c.ListAllUsers(ctx)
+}
+
 // ListAllVMs returns all VMs (admin only)
 func (c *AdminController) ListAllVMs(ctx *fiber.Ctx) error {
 	// Parse pagination
