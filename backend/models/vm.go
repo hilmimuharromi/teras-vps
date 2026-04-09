@@ -19,14 +19,14 @@ const (
 type VM struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UserID    uint      `gorm:"not null;index" json:"user_id"`
-	VMID      int       `gorm:"not null;index" json:"vmid"` // Proxmox VM ID
+	VMID      int       `gorm:"column:vmid;not null;index" json:"vmid"` // Proxmox VM ID
 	Name      string    `gorm:"size:100;not null" json:"name"`
 	Hostname  string    `gorm:"size:100" json:"hostname"`
 	Status    VMStatus  `gorm:"size:20;default:stopped" json:"status"`
 	Cores     int       `gorm:"not null" json:"cores"`
-	Memory    int       `gorm:"not null" json:"memory"` // in MB
-	Disk      int       `gorm:"not null" json:"disk"`   // in GB
-	PublicIP  string    `gorm:"type:inet" json:"public_ip,omitempty"`
+	Memory    int       `gorm:"not null" json:"memory"`               // in MB
+	Disk      int       `gorm:"not null" json:"disk"`                 // in GB
+	PublicIP  *string   `gorm:"type:inet" json:"public_ip,omitempty"` // Nullable for inet type
 	SSHPort   int       `gorm:"default:22" json:"ssh_port"`
 	VNCPort   int       `gorm:"default:5900" json:"vnc_port"`
 	Template  string    `gorm:"size:255" json:"template"`

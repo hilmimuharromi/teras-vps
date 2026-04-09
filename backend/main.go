@@ -6,14 +6,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
 
 	"teras-vps/backend/config"
 	"teras-vps/backend/database"
+	"teras-vps/backend/middleware"
 	"teras-vps/backend/proxmox"
 	"teras-vps/backend/routes"
+	"teras-vps/backend/utils"
 	"teras-vps/backend/websocket"
 )
 
@@ -25,6 +26,9 @@ func main() {
 
 	// Initialize configuration
 	cfg := config.Load()
+
+	// Initialize JWT secret
+	utils.InitJWT(cfg)
 
 	// Initialize database
 	db, err := database.InitDB(cfg)
@@ -54,13 +58,20 @@ func main() {
 	})
 
 	// Middleware
-	app.Use(logger.New())
 	app.Use(recover.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.FrontendURL,
 		AllowCredentials: true,
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+	}))
+
+	// Detailed request/response logging
+	app.Use(middleware.RequestLogger(middleware.RequestLoggerConfig{
+		LogRequestBody:  true,
+		LogResponseBody: true,
+		MaxBodySize:     2048,
+		SkipPaths:       []string{"/health"},
 	}))
 
 	// Health check

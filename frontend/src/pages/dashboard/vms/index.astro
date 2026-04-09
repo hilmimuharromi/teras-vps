@@ -1,173 +1,361 @@
 ---
-import DashboardLayout from '../../../layouts/Dashboard.astro';
+import DashboardLayout from "../../../layouts/Dashboard.astro";
 ---
 
 <DashboardLayout title="My VMs - TerasVPS">
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold">My Virtual Machines</h1>
-        <p class="mt-2 text-muted-foreground">Manage your VM instances</p>
+        <h1 class="text-[22px] font-semibold text-[#E5E7EB]">My VMs</h1>
+        <p class="text-sm text-[#9CA3AF] mt-1">Manage your virtual machines</p>
       </div>
       <a
         href="/dashboard/vms/new"
-        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+        class="h-9 px-4 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] text-sm font-medium transition-colors"
+        >+ Create VM</a
       >
-        + Create VM
-      </a>
     </div>
 
-    <!-- VMs List -->
-    <div id="vmsList" class="space-y-4">
-      <div class="text-center py-8 text-muted-foreground">
-        Loading VMs...
-      </div>
+    <div id="vmsList" class="space-y-3">
+      <div class="text-center py-12 text-[#9CA3AF] text-sm">Loading VMs...</div>
     </div>
 
-    <!-- Empty State -->
-    <div id="emptyState" class="hidden text-center py-12">
-      <div class="text-6xl mb-4">🖥️</div>
-      <h3 class="text-xl font-semibold mb-2">No VMs Yet</h3>
-      <p class="text-muted-foreground mb-4">Create your first virtual machine to get started</p>
+    <div
+      id="emptyState"
+      class="hidden text-center py-12 bg-[#111827] rounded-xl border border-[#1F2937]"
+    >
+      <div class="text-5xl mb-4">🖥️</div>
+      <h3 class="text-lg font-semibold text-[#E5E7EB] mb-2">No VMs Yet</h3>
+      <p class="text-sm text-[#9CA3AF] mb-6">
+        Create your first virtual machine to get started
+      </p>
       <a
         href="/dashboard/vms/new"
-        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+        class="inline-block h-9 px-4 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] text-sm font-medium transition-colors"
+        >Create VM</a
       >
-        Create VM
-      </a>
     </div>
   </div>
 
-  <script>
-    // Fetch VMs from API
-    async function fetchVMs() {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/v1/vms', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+  <script is:inline>
+    const CHART_CDN =
+      "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js";
+    window.vmCharts = { cpu: {}, memory: {} };
+    window.detailCharts = { cpu: null, memory: null, disk: null };
+    let statsInterval = null;
 
+    async function fetchVMs() {
+      if (statsInterval) clearInterval(statsInterval);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/v1/vms", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await response.json();
 
         if (data.success) {
           const vms = data.data.vms;
-          const vmsList = document.getElementById('vmsList');
-          const emptyState = document.getElementById('emptyState');
+          const vmsList = document.getElementById("vmsList");
+          const emptyState = document.getElementById("emptyState");
+          if (!vmsList || !emptyState) return;
 
           if (vms.length === 0) {
-            vmsList.classList.add('hidden');
-            emptyState.classList.remove('hidden');
+            vmsList.classList.add("hidden");
+            emptyState.classList.remove("hidden");
           } else {
-            vmsList.innerHTML = vms.map(vm => `
-              <div class="p-6 bg-card rounded-lg border border-border">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h3 class="text-xl font-semibold">${vm.name}</h3>
-                    <p class="text-sm text-muted-foreground">${vm.hostname}</p>
-                    <div class="mt-2 text-sm">
-                      <span class="mr-4">🖥️ ${vm.cores} Cores</span>
-                      <span class="mr-4">🧠 ${vm.memory}MB RAM</span>
-                      <span>💾 ${vm.disk}GB Disk</span>
+            vmsList.classList.remove("hidden");
+            emptyState.classList.add("hidden");
+
+            vmsList.innerHTML = vms
+              .map((vm) => {
+                const sshCmd = vm.public_ip
+                  ? `ssh root@${vm.public_ip} -p ${vm.ssh_port || 22}`
+                  : "";
+                const isRunning = vm.status === "running";
+                const statusBg = isRunning
+                  ? "bg-[#10B981]"
+                  : vm.status === "error"
+                    ? "bg-[#EF4444]"
+                    : "bg-[#1F2937]";
+                const memDisplay =
+                  vm.memory >= 1024
+                    ? (vm.memory / 1024).toFixed(1) + " GB"
+                    : vm.memory + " MB";
+
+                return `
+                <div class="bg-[#111827] rounded-xl border border-[#1F2937] overflow-hidden transition-all hover:border-[#2563EB]/30" id="vm-${vm.id}">
+                  <div class="flex items-center gap-4 px-4 py-3">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                      <span class="inline-block w-2 h-2 rounded-full ${statusBg} flex-shrink-0"></span>
+                      <div class="min-w-0">
+                        <div class="text-sm font-medium text-[#E5E7EB] truncate">${vm.name}</div>
+                        <div class="text-xs text-[#9CA3AF]">${vm.hostname || "N/A"}</div>
+                      </div>
                     </div>
-                    <div class="mt-2 text-sm">
-                      <span class="mr-4">🌐 ${vm.public_ip || 'N/A'}</span>
-                      <span class="px-2 py-1 rounded ${
-                        vm.status === 'running' ? 'bg-green-100 text-green-800' :
-                        vm.status === 'stopped' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }">
-                        ${vm.status.toUpperCase()}
-                      </span>
+                    <div class="hidden md:flex items-center gap-4 text-xs text-[#9CA3AF] whitespace-nowrap">
+                      <span>🖥️${vm.cores} Core${vm.cores > 1 ? "s" : ""}</span>
+                      <span>🧠${memDisplay}</span>
+                      <span>💾${vm.disk} GB</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      ${isRunning && sshCmd ? `<div class="hidden lg:flex items-center gap-2 bg-[#0B0F19] px-3 py-1.5 rounded-lg"><code class="text-xs text-[#10B981] font-mono truncate max-w-[180px]">${sshCmd}</code><button onclick="copySSH('${sshCmd}')" class="text-[#9CA3AF] hover:text-[#E5E7EB]">📋</button></div>` : ""}
+                      <button onclick="viewDetail(${vm.id})" class="h-8 px-3 bg-[#1F2937] text-[#E5E7EB] rounded-lg hover:bg-[#374151] text-xs font-medium transition-colors flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>Detail</button>
+                      ${isRunning ? `<button onclick="stopVM(${vm.id})" class="h-8 px-3 bg-[#EF4444] text-white rounded-lg hover:bg-[#DC2626] text-xs font-medium transition-colors">Stop</button>` : `<button onclick="startVM(${vm.id})" class="h-8 px-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] text-xs font-medium transition-colors">Start</button>`}
                     </div>
                   </div>
-                  <div class="flex space-x-2">
-                    <a
-                      href="/dashboard/vms/${vm.id}"
-                      class="px-3 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90"
-                    >
-                      View
-                    </a>
-                    <button
-                      onclick="startVM(${vm.id})"
-                      class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                      ${vm.status === 'running' ? 'disabled' : ''}
-                    >
-                      ▶️ Start
-                    </button>
-                    <button
-                      onclick="stopVM(${vm.id})"
-                      class="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                      ${vm.status === 'stopped' ? 'disabled' : ''}
-                    >
-                      ⏹️ Stop
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `).join('');
+                </div>`;
+              })
+              .join("");
           }
         }
-      } catch (error) {
-        console.error('Failed to fetch VMs:', error);
-        document.getElementById('vmsList').innerHTML = `
-          <div class="text-center py-8 text-destructive">
-            Failed to load VMs. Please try again.
-          </div>
-        `;
+      } catch (err) {
+        console.error("Failed to fetch VMs:", err);
       }
     }
 
-    // Start VM
-    async function startVM(vmId: number) {
+    async function viewDetail(vmId) {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/v1/vms/${vmId}/start`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const token = localStorage.getItem("token");
+        const [vmRes, statsRes] = await Promise.all([
+          fetch(`/api/v1/vms/${vmId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`/api/v1/vms/${vmId}/stats`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const vmData = await vmRes.json();
+        const statsData = await statsRes.json();
 
-        const data = await response.json();
+        if (vmData.success) {
+          const vm = vmData.data.vm;
+          const isRunning = vm.status === "running";
+          const sshCmd = vm.public_ip
+            ? `ssh root@${vm.public_ip} -p ${vm.ssh_port || 22}`
+            : "";
+          const memDisplay =
+            vm.memory >= 1024
+              ? (vm.memory / 1024).toFixed(1) + " GB"
+              : vm.memory + " MB";
 
-        if (data.success) {
-          alert('VM started successfully!');
-          fetchVMs();
-        } else {
-          alert('Failed to start VM: ' + data.error.message);
+          const stats = statsData.success ? statsData.data.stats : null;
+          const cpu = stats ? Math.round(stats.cpu * 100) : 0;
+          const mem = stats ? Math.round(stats.mem / 1024 / 1024) : 0;
+          const disk = stats ? (stats.disk / 1024 / 1024 / 1024).toFixed(1) : 0;
+
+          document.getElementById("vmsList").innerHTML = `
+            <div class="bg-[#111827] rounded-xl border border-[#1F2937] overflow-hidden">
+              <div class="flex justify-between items-start px-4 py-3 border-b border-[#1F2937]">
+                <div>
+                  <div class="flex items-center gap-3 mb-1">
+                    <span class="inline-block w-2 h-2 rounded-full ${isRunning ? "bg-[#10B981]" : "bg-[#1F2937]"}"></span>
+                    <h2 class="text-lg font-semibold text-[#E5E7EB]">${vm.name}</h2>
+                    <span class="px-2 py-0.5 text-xs rounded-full ${isRunning ? "bg-[#10B981]/10 text-[#10B981]" : "bg-[#1F2937] text-[#9CA3AF]"}">${vm.status.toUpperCase()}</span>
+                  </div>
+                  <p class="text-sm text-[#9CA3AF] ml-5">${vm.hostname || "N/A"}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="fetchVMs()" class="h-8 px-3 bg-[#1F2937] text-[#E5E7EB] rounded-lg hover:bg-[#374151] text-xs transition-colors flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>Back</button>
+                  ${isRunning ? `<button onclick="stopVM(${vm.id})" class="h-8 px-3 bg-[#EF4444] text-white rounded-lg hover:bg-[#DC2626] text-xs transition-colors">Stop</button><button onclick="rebootVM(${vm.id})" class="h-8 px-3 bg-[#F59E0B] text-white rounded-lg hover:bg-[#D97706] text-xs transition-colors">Reboot</button>` : `<button onclick="startVM(${vm.id})" class="h-8 px-3 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] text-xs transition-colors">Start</button>`}
+                </div>
+              </div>
+              ${sshCmd && isRunning ? `<div class="px-4 py-2.5 bg-[#10B981]/5 border-b border-[#1F2937] flex items-center justify-between"><div class="flex items-center gap-2 min-w-0 flex-1"><svg class="w-3.5 h-3.5 text-[#10B981] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><code class="text-xs text-[#10B981] font-mono truncate">${sshCmd}</code></div><button onclick="copySSH('${sshCmd}')" class="ml-2 px-2 py-1 bg-[#1F2937] hover:bg-[#374151] rounded text-xs text-[#9CA3AF] transition-colors">📋</button></div>` : ""}
+              <div class="grid grid-cols-4 gap-px bg-[#1F2937]">
+                <div class="bg-[#111827] px-4 py-3"><div class="text-xs text-[#9CA3AF] mb-1">CPU Cores</div><div class="text-lg font-semibold text-[#E5E7EB]">${vm.cores}</div></div>
+                <div class="bg-[#111827] px-4 py-3"><div class="text-xs text-[#9CA3AF] mb-1">Memory</div><div class="text-lg font-semibold text-[#E5E7EB]">${memDisplay}</div></div>
+                <div class="bg-[#111827] px-4 py-3"><div class="text-xs text-[#9CA3AF] mb-1">Disk</div><div class="text-lg font-semibold text-[#E5E7EB]">${vm.disk} GB</div></div>
+                <div class="bg-[#111827] px-4 py-3"><div class="text-xs text-[#9CA3AF] mb-1">VM ID</div><div class="text-lg font-semibold text-[#E5E7EB]">${vm.vmid}</div></div>
+              </div>
+              ${
+                isRunning
+                  ? `
+              <div class="grid grid-cols-3 gap-px bg-[#1F2937] border-t border-[#1F2937]">
+                <div class="bg-[#111827] px-4 py-3">
+                  <div class="flex items-center justify-between mb-2"><span class="text-xs text-[#9CA3AF]">CPU Usage</span><span class="text-sm font-bold text-[#3B82F6]" id="detail-cpu-val">${cpu}%</span></div>
+                  <div style="height:100px"><canvas id="detail-cpu-chart"></canvas></div>
+                </div>
+                <div class="bg-[#111827] px-4 py-3">
+                  <div class="flex items-center justify-between mb-2"><span class="text-xs text-[#9CA3AF]">Memory</span><span class="text-sm font-bold text-[#3B82F6]" id="detail-mem-val">${mem >= 1024 ? (mem / 1024).toFixed(1) + " GB" : mem + " MB"}</span></div>
+                  <div style="height:100px"><canvas id="detail-memory-chart"></canvas></div>
+                </div>
+                <div class="bg-[#111827] px-4 py-3">
+                  <div class="flex items-center justify-between mb-2"><span class="text-xs text-[#9CA3AF]">Disk</span><span class="text-sm font-bold text-[#3B82F6]" id="detail-disk-val">${disk} GB</span></div>
+                  <div style="height:100px"><canvas id="detail-disk-chart"></canvas></div>
+                </div>
+              </div>`
+                  : ""
+              }
+            </div>`;
+
+          if (isRunning && stats) {
+            setTimeout(() => initDetailCharts(vm.memory, cpu, mem, disk), 100);
+            statsInterval = setInterval(() => fetchDetailStats(vmId), 5000);
+          }
         }
-      } catch (error) {
-        alert('Failed to start VM: ' + error);
+      } catch (err) {
+        console.error("Failed to fetch VM detail:", err);
       }
     }
 
-    // Stop VM
-    async function stopVM(vmId: number) {
+    function initDetailCharts(memLimit, initCpu, initMem, initDisk) {
+      if (typeof Chart === "undefined") {
+        setTimeout(
+          () => initDetailCharts(memLimit, initCpu, initMem, initDisk),
+          100,
+        );
+        return;
+      }
+
+      const opts = (color, maxVal, initVal) => ({
+        type: "line",
+        data: {
+          labels: Array(20).fill(""),
+          datasets: [
+            {
+              data: [...Array(19).fill(initVal), initVal],
+              borderColor: color,
+              backgroundColor: color
+                .replace(")", ", 0.1)")
+                .replace("rgb", "rgba"),
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: {
+              beginAtZero: true,
+              max: maxVal,
+              grid: { color: "rgba(31,41,55,0.6)", drawBorder: false },
+              ticks: { color: "#6B7280", font: { size: 10 }, maxTicksLimit: 4 },
+              border: { display: false },
+            },
+          },
+          animation: { duration: 400 },
+        },
+      });
+
+      const c = document.getElementById("detail-cpu-chart");
+      if (c)
+        window.detailCharts.cpu = new Chart(
+          c,
+          opts("rgb(59, 130, 246)", 100, initCpu),
+        );
+      const m = document.getElementById("detail-memory-chart");
+      if (m)
+        window.detailCharts.memory = new Chart(
+          m,
+          opts("rgb(59, 130, 246)", memLimit, initMem),
+        );
+      const d = document.getElementById("detail-disk-chart");
+      if (d)
+        window.detailCharts.disk = new Chart(
+          d,
+          opts("rgb(59, 130, 246)", 100, initDisk),
+        );
+    }
+
+    async function fetchDetailStats(vmId) {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/v1/vms/${vmId}/stop`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/v1/vms/${vmId}/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-          alert('VM stopped successfully!');
-          fetchVMs();
-        } else {
-          alert('Failed to stop VM: ' + data.error.message);
+        const data = await res.json();
+        if (data.success && data.data.stats) {
+          const s = data.data.stats;
+          const cpu = Math.round(s.cpu * 100) || 0;
+          const mem = Math.round(s.mem / 1024 / 1024) || 0;
+          const disk = s.disk ? (s.disk / 1024 / 1024 / 1024).toFixed(1) : 0;
+          const cv = document.getElementById("detail-cpu-val");
+          if (cv) cv.textContent = cpu + "%";
+          const mv = document.getElementById("detail-mem-val");
+          if (mv)
+            mv.textContent =
+              mem >= 1024 ? (mem / 1024).toFixed(1) + " GB" : mem + " MB";
+          const dv = document.getElementById("detail-disk-val");
+          if (dv) dv.textContent = disk + " GB";
+          if (window.detailCharts.cpu) {
+            window.detailCharts.cpu.data.datasets[0].data.push(cpu);
+            if (window.detailCharts.cpu.data.datasets[0].data.length > 20)
+              window.detailCharts.cpu.data.datasets[0].data.shift();
+            window.detailCharts.cpu.update("none");
+          }
+          if (window.detailCharts.memory) {
+            window.detailCharts.memory.data.datasets[0].data.push(mem);
+            if (window.detailCharts.memory.data.datasets[0].data.length > 20)
+              window.detailCharts.memory.data.datasets[0].data.shift();
+            window.detailCharts.memory.update("none");
+          }
+          if (window.detailCharts.disk) {
+            window.detailCharts.disk.data.datasets[0].data.push(
+              parseFloat(disk),
+            );
+            if (window.detailCharts.disk.data.datasets[0].data.length > 20)
+              window.detailCharts.disk.data.datasets[0].data.shift();
+            window.detailCharts.disk.update("none");
+          }
         }
-      } catch (error) {
-        alert('Failed to stop VM: ' + error);
-      }
+      } catch (err) {}
     }
 
-    // Fetch VMs on load
-    fetchVMs();
+    function copySSH(cmd) {
+      navigator.clipboard.writeText(cmd).then(() => {
+        const btn = event.target.closest("button");
+        if (btn) {
+          btn.textContent = "✅";
+          setTimeout(() => (btn.textContent = "📋"), 2000);
+        }
+      });
+    }
+
+    async function startVM(id) {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/v1/vms/${id}/start`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) window.location.reload();
+      else alert("Failed: " + data.error.message);
+    }
+
+    async function stopVM(id) {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/v1/vms/${id}/stop`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) window.location.reload();
+      else alert("Failed: " + data.error.message);
+    }
+
+    async function rebootVM(id) {
+      if (!confirm("Reboot this VM?")) return;
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/v1/vms/${id}/reboot`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) window.location.reload();
+      else alert("Failed: " + data.error.message);
+    }
+
+    window.addEventListener("popstate", () => fetchVMs());
+
+    const script = document.createElement("script");
+    script.src = CHART_CDN;
+    script.onload = () => fetchVMs();
+    script.onerror = () => fetchVMs();
+    document.head.appendChild(script);
   </script>
 </DashboardLayout>

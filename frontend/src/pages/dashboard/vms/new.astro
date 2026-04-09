@@ -1,12 +1,14 @@
 ---
-import DashboardLayout from '../../../layouts/Dashboard.astro';
+import DashboardLayout from "../../../layouts/Dashboard.astro";
 ---
 
 <DashboardLayout title="Create VM - TerasVPS">
   <div class="max-w-2xl">
     <div class="mb-6">
       <h1 class="text-3xl font-bold">Create New VM</h1>
-      <p class="mt-2 text-muted-foreground">Choose a plan and configure your virtual machine</p>
+      <p class="mt-2 text-muted-foreground">
+        Choose a plan and configure your virtual machine
+      </p>
     </div>
 
     <form id="createVMForm" class="space-y-6">
@@ -25,7 +27,9 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
         <h2 class="text-xl font-semibold mb-4">VM Configuration</h2>
         <div class="space-y-4">
           <div>
-            <label for="hostname" class="block text-sm font-medium">Hostname</label>
+            <label for="hostname" class="block text-sm font-medium"
+              >Hostname</label
+            >
             <input
               id="hostname"
               name="hostname"
@@ -42,7 +46,9 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
           </div>
 
           <div>
-            <label for="template" class="block text-sm font-medium">OS Template (Optional)</label>
+            <label for="template" class="block text-sm font-medium"
+              >OS Template (Optional)</label
+            >
             <select
               id="template"
               name="template"
@@ -87,14 +93,21 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
     // Fetch plans
     async function fetchPlans() {
       try {
-        const response = await fetch('/api/v1/billing/plans');
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/v1/billing/plans", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await response.json();
 
         if (data.success) {
           const plans = data.data.plans;
-          const plansList = document.getElementById('plansList');
+          const plansList = document.getElementById("plansList");
 
-          plansList.innerHTML = plans.map(plan => `
+          plansList.innerHTML = plans
+            .map(
+              (plan) => `
             <div class="p-4 border rounded-lg cursor-pointer hover:border-primary transition-colors plan-card" data-plan-id="${plan.id}">
               <div class="flex items-center justify-between">
                 <div>
@@ -111,24 +124,28 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
                 </div>
               </div>
             </div>
-          `).join('');
+          `,
+            )
+            .join("");
 
           // Add click handlers to plan cards
-          document.querySelectorAll('.plan-card').forEach(card => {
-            card.addEventListener('click', () => {
+          document.querySelectorAll(".plan-card").forEach((card) => {
+            card.addEventListener("click", () => {
               // Remove selection from all cards
-              document.querySelectorAll('.plan-card').forEach(c => {
-                c.classList.remove('border-primary', 'bg-primary/5');
+              document.querySelectorAll(".plan-card").forEach((c) => {
+                c.classList.remove("border-primary", "bg-primary/5");
               });
               // Select this card
-              card.classList.add('border-primary', 'bg-primary/5');
-              selectedPlanId = parseInt(card.getAttribute('data-plan-id') || '0');
+              card.classList.add("border-primary", "bg-primary/5");
+              selectedPlanId = parseInt(
+                card.getAttribute("data-plan-id") || "0",
+              );
             });
           });
         }
       } catch (error) {
-        console.error('Failed to fetch plans:', error);
-        document.getElementById('plansList').innerHTML = `
+        console.error("Failed to fetch plans:", error);
+        document.getElementById("plansList").innerHTML = `
           <div class="text-center py-4 text-destructive">
             Failed to load plans. Please try again.
           </div>
@@ -141,26 +158,27 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
       event.preventDefault();
 
       if (!selectedPlanId) {
-        alert('Please select a plan');
+        alert("Please select a plan");
         return;
       }
 
-      const form = document.getElementById('createVMForm') as HTMLFormElement;
+      const form = document.getElementById("createVMForm") as HTMLFormElement;
       const formData = new FormData(form);
 
       const payload = {
         plan_id: selectedPlanId,
-        hostname: formData.get('hostname') as string,
-        template: formData.get('template') as string || '',
+        hostname: formData.get("hostname") as string,
+        template: "100",
+        // template: (formData.get("template") as string) || "",
       };
 
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/v1/vms', {
-          method: 'POST',
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/v1/vms", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
         });
@@ -168,14 +186,14 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
         const data = await response.json();
 
         if (data.success) {
-          alert('VM created successfully!');
-          window.location.href = '/dashboard/vms';
+          alert("VM created successfully!");
+          window.location.href = "/dashboard/vms";
         } else {
-          document.getElementById('error').textContent = data.error.message;
-          document.getElementById('error').classList.remove('hidden');
+          document.getElementById("error").textContent = data.error.message;
+          document.getElementById("error").classList.remove("hidden");
         }
       } catch (error) {
-        alert('Failed to create VM: ' + error);
+        alert("Failed to create VM: " + error);
       }
     }
 
@@ -183,6 +201,8 @@ import DashboardLayout from '../../../layouts/Dashboard.astro';
     fetchPlans();
 
     // Add form submit handler
-    document.getElementById('createVMForm').addEventListener('submit', createVM);
+    document
+      .getElementById("createVMForm")
+      .addEventListener("submit", createVM);
   </script>
 </DashboardLayout>

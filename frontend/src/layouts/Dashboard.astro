@@ -1,5 +1,6 @@
 ---
-import Layout from './Layout.astro';
+import Layout from "./Layout.astro";
+import "../styles/global.css";
 
 interface Props {
   title?: string;
@@ -9,61 +10,153 @@ const { title = "Dashboard - TerasVPS" } = Astro.props;
 ---
 
 <Layout title={title}>
-  <div class="min-h-screen bg-background">
+  <div
+    class="min-h-screen bg-[#0B0F19] font-sans"
+    style="font-family: Inter, system-ui, -apple-system, sans-serif;"
+  >
     <!-- Sidebar -->
-    <aside class="fixed left-0 top-0 h-full w-64 bg-card border-r border-border">
-      <div class="p-6">
-        <h1 class="text-2xl font-bold text-primary">TerasVPS</h1>
+    <aside
+      class="fixed left-0 top-0 h-full w-[240px] bg-[#0B0F19] border-r border-[#1F2937]"
+    >
+      <div class="px-6 py-6 border-b border-[#1F2937]">
+        <h1 class="text-xl font-semibold text-[#E5E7EB]">TerasVPS</h1>
       </div>
 
-      <nav class="mt-6 px-4 space-y-2">
+      <nav class="mt-4 px-3 space-y-1">
         <a
           href="/dashboard"
-          class="flex items-center px-4 py-3 rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground"
+          class="flex items-center px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:bg-[#111827] hover:text-[#E5E7EB] transition-colors text-sm"
         >
-          <span class="mr-3">🏠</span>
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            ></path></svg
+          >
           Dashboard
         </a>
 
         <a
           href="/dashboard/vms"
-          class="flex items-center px-4 py-3 rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground"
+          class="flex items-center px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:bg-[#111827] hover:text-[#E5E7EB] transition-colors text-sm"
         >
-          <span class="mr-3">🖥️</span>
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+            ></path></svg
+          >
           My VMs
         </a>
 
         <a
           href="/dashboard/billing"
-          class="flex items-center px-4 py-3 rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground"
+          class="flex items-center px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:bg-[#111827] hover:text-[#E5E7EB] transition-colors text-sm"
         >
-          <span class="mr-3">💳</span>
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+            ></path></svg
+          >
           Billing
         </a>
 
         <a
           href="/dashboard/settings"
-          class="flex items-center px-4 py-3 rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground"
+          class="flex items-center px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:bg-[#111827] hover:text-[#E5E7EB] transition-colors text-sm"
         >
-          <span class="mr-3">⚙️</span>
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            ></path><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg
+          >
           Settings
         </a>
       </nav>
 
-      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
-        <a
-          href="/auth/logout"
-          class="flex items-center px-4 py-2 rounded-lg text-destructive hover:bg-destructive/10"
+      <div
+        class="absolute bottom-0 left-0 right-0 p-4 border-t border-[#1F2937]"
+      >
+        <button
+          id="logoutButton"
+          type="button"
+          class="flex w-full items-center px-3 py-2 rounded-lg text-[#9CA3AF] hover:bg-[#111827] hover:text-[#EF4444] transition-colors text-sm"
         >
-          <span class="mr-3">🚪</span>
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            ></path></svg
+          >
           Logout
-        </a>
+        </button>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="ml-64 p-8">
+    <main class="ml-[240px] p-6">
       <slot />
     </main>
   </div>
+
+  <script>
+    const logoutButton = document.getElementById("logoutButton");
+
+    logoutButton?.addEventListener("click", async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (token) {
+          await fetch("/api/v1/auth/logout", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Logout request failed:", error);
+      } finally {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/auth/login";
+      }
+    });
+  </script>
 </Layout>
