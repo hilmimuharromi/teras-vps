@@ -1,0 +1,183 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Auth Debug - TerasVPS">
+  <div class="min-h-screen flex items-center justify-center bg-background p-8">
+    <div class="max-w-2xl w-full p-8 space-y-6 bg-card rounded-lg shadow-lg">
+      <h1 class="text-3xl font-bold">🔍 Authentication Debug</h1>
+
+      <div id="debugInfo" class="space-y-4">
+        <p class="text-muted-foreground">Loading debug info...</p>
+      </div>
+
+      <div class="space-y-4">
+        <h2 class="text-xl font-semibold">Test Actions</h2>
+
+        <button id="testLogin" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Test Login (test@test.com / test12345)
+        </button>
+
+        <button id="testAPI" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+          Test API Call (/api/v1/billing/plans)
+        </button>
+
+        <button id="clearToken" class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+          Clear Token
+        </button>
+
+        <button id="refreshPage" class="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+          Refresh Page
+        </button>
+      </div>
+
+      <div id="testResults" class="space-y-2 hidden">
+        <h2 class="text-xl font-semibold">Test Results</h2>
+        <pre id="resultsContent" class="bg-background p-4 rounded text-sm overflow-auto max-h-96"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateDebugInfo() {
+      const debugDiv = document.getElementById('debugInfo');
+
+      // Check localStorage
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+
+      let html = `
+        <div class="space-y-2">
+          <div class="p-4 bg-background rounded">
+            <p class="font-semibold">📦 LocalStorage Status:</p>
+            <p class="text-sm mt-2">
+              Token: ${token ? `<span class="text-green-600">✓ EXISTS</span> (${token.split('.').length} parts)` : '<span class="text-red-600">✗ NOT FOUND</span>'}
+            </p>
+            ${token ? `<p class="text-xs mt-1 font-mono break-all">${token.substring(0, 50)}...</p>` : ''}
+            <p class="text-sm mt-2">
+              User: ${user ? `<span class="text-green-600">✓ EXISTS</span>` : '<span class="text-red-600">✗ NOT FOUND</span>'}
+            </p>
+          </div>
+      `;
+
+      // Decode JWT if exists
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const expDate = new Date(payload.exp * 1000);
+          const now = new Date();
+          const isExpired = now > expDate;
+
+          html += `
+            <div class="p-4 bg-background rounded">
+              <p class="font-semibold">🔐 JWT Token Details:</p>
+              <table class="text-sm mt-2 w-full">
+                <tr><td class="py-1">User ID:</td><td>${payload.user_id}</td></tr>
+                <tr><td class="py-1">Email:</td><td>${payload.email}</td></tr>
+                <tr><td class="py-1">Role:</td><td>${payload.role}</td></tr>
+                <tr><td class="py-1">Issued:</td><td>${new Date(payload.iat * 1000).toLocaleString()}</td></tr>
+                <tr><td class="py-1">Expires:</td><td>${expDate.toLocaleString()}</td></tr>
+                <tr><td class="py-1">Status:</td><td class="${isExpired ? 'text-red-600' : 'text-green-600'}">${isExpired ? '❌ EXPIRED' : '✅ VALID'}</td></tr>
+              </table>
+            </div>
+          `;
+        } catch (e) {
+          html += `
+            <div class="p-4 bg-background rounded">
+              <p class="font-semibold text-red-600">❌ Invalid JWT format: ${e.message}</p>
+            </div>
+          `;
+        }
+      }
+
+      html += `</div>`;
+      debugDiv.innerHTML = html;
+    }
+
+    function showResults(data) {
+      const resultsDiv = document.getElementById('testResults');
+      const resultsContent = document.getElementById('resultsContent');
+      resultsDiv.classList.remove('hidden');
+      resultsContent.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    // Test Login
+    document.getElementById('testLogin')?.addEventListener('click', async () => {
+      try {
+        showResults('Testing login...');
+        const response = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: 'test@test.com',
+            password: 'test12345'
+          })
+        });
+
+        const data = await response.json();
+        showResults({
+          status: response.status,
+          ok: response.ok,
+          data: data
+        });
+
+        if (data.data?.token) {
+          localStorage.setItem('token', data.data.token);
+          updateDebugInfo();
+        }
+      } catch (error) {
+        showResults({ error: error.message });
+      }
+    });
+
+    // Test API
+    document.getElementById('testAPI')?.addEventListener('click', async () => {
+      try {
+        const token = localStorage.getItem('token');
+        showResults('Testing API call...\n');
+
+        if (!token) {
+          showResults('❌ No token found in localStorage. Please login first.');
+          return;
+        }
+
+        showResults(`Calling API with token:\nAuthorization: Bearer ${token.substring(0, 30)}...\n`);
+
+        const response = await fetch('/api/v1/billing/plans', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        showResults({
+          status: response.status,
+          ok: response.ok,
+          headers: {
+            authorization: `Bearer ${token.substring(0, 30)}...`
+          },
+          data: data
+        });
+      } catch (error) {
+        showResults({ error: error.message, stack: error.stack });
+      }
+    });
+
+    // Clear Token
+    document.getElementById('clearToken')?.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      updateDebugInfo();
+      showResults('Token cleared from localStorage');
+    });
+
+    // Refresh Page
+    document.getElementById('refreshPage')?.addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    // Initial load
+    updateDebugInfo();
+  </script>
+</Layout>
